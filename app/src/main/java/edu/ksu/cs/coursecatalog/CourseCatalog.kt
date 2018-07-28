@@ -21,37 +21,55 @@ class CourseCatalog : ContentProvider() {
         val stringBuffer = StringBuffer()
 
         fun parseCourse(){
+            var id: Int = -1
+            var ugrad: Boolean = false
+            var grad: Boolean = false
+            var prefix: String = ""
+            var number: String = ""
+            var title: String = ""
+            var description: String = ""
+            var minHours: Int = -1
+            var maxHours: Int = -1
+            var variableHours: Boolean = false
+            var requisites: String = ""
+            var semesters: String = ""
+            var uge: Boolean = false
+            var kstate8: String = ""
             eventType = xml.next()
             var map = mutableMapOf<String, String>()
+            var name: String
             while(xml.name != "htmlparse.Course"){
                 if(eventType == XmlPullParser.START_TAG){
-                    map[xml.name] = xml.nextText()
+                    when(xml.name){
+                        "id" -> id = xml.nextText().toInt()
+                        "ugrad" -> ugrad = xml.nextText().toBoolean()
+                        "grad" -> grad = xml.nextText().toBoolean()
+                        "prefix" -> prefix = xml.nextText()
+                        "number" -> number = xml.nextText()
+                        "title" -> title = xml.nextText()
+                        "description" -> description = xml.nextText()
+                        "minHours" -> minHours = xml.nextText().toInt()
+                        "maxHours" -> maxHours = xml.nextText().toInt()
+                        "variableHours" -> variableHours = xml.nextText().toBoolean()
+                        "requisites" -> requisites = xml.nextText()
+                        "semesters" -> semesters = xml.nextText()
+                        "uge" -> uge = xml.nextText().toBoolean()
+                        "kstate8" -> kstate8 = xml.nextText()
+                    }
                 }
                 eventType = xml.next()
             }
-            var courseListing: CourseListing = CourseListing(
-                    map.getValue("id").toInt(),
-                    map.getValue("ugrad").toBoolean(),
-                    map.getValue("grad").toBoolean(),
-                    map.getValue("prefix"),
-                    map.getValue("number"),
-                    map.getValue("title"),
-                    map.getValue("description"),
-                    map.getValue("minHours").toInt(),
-                    map.getValue("maxHours").toInt(),
-                    map.getValue("variableHours").toBoolean(),
-                    map.getValue("requisites"),
-                    map.getValue("semesters"),
-                    map.getValue("uge").toBoolean(),
-                    map.getValue("kstate8")
-            )
-            courses.add(courseListing)
+            courses.add(CourseListing(id, ugrad, grad, prefix, number, title, description, minHours, maxHours, variableHours, requisites, semesters, uge, kstate8))
         }
 
         while(eventType != XmlPullParser.END_DOCUMENT) {
-            if (eventType == XmlPullParser.START_TAG && xml.name == "htmlparse.Course") parseCourse()
+            if (eventType == XmlPullParser.START_TAG && xml.name == "htmlparse.Course") {
+                parseCourse()
+            }
             eventType = xml.next()
         }
+
+        nCourses = courses.toTypedArray()
 
         Log.i("xmlcontent", stringBuffer.toString())
 
