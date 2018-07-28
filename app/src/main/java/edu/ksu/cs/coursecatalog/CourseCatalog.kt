@@ -2,7 +2,9 @@ package edu.ksu.cs.coursecatalog
 
 import android.content.ContentProvider
 import android.content.ContentValues
+import android.content.UriMatcher
 import android.database.Cursor
+import android.database.MatrixCursor
 import android.net.Uri
 import android.util.Log
 import org.xmlpull.v1.XmlPullParser
@@ -10,6 +12,18 @@ import org.xmlpull.v1.XmlPullParser
 class CourseCatalog : ContentProvider() {
 
     lateinit var nCourses: Array<CourseListing>
+
+    companion object {
+        val AUTHORITY = "edu.ksu.cs.coursecatalog.provider"
+        val CONTENT_URI = Uri.parse("content://$AUTHORITY/courses")
+    }
+
+    private val uriMatcher = UriMatcher(UriMatcher.NO_MATCH)
+
+    init {
+        uriMatcher.addURI(AUTHORITY, "courses", 1)
+        uriMatcher.addURI(AUTHORITY, "courses/#", 2)
+    }
 
     override fun onCreate(): Boolean {
         var xml = context.resources.getXml(R.xml.courses)
@@ -37,6 +51,7 @@ class CourseCatalog : ContentProvider() {
             var kstate8: String = ""
             eventType = xml.next()
             var map = mutableMapOf<String, String>()
+
             var name: String
             while(xml.name != "htmlparse.Course"){
                 if(eventType == XmlPullParser.START_TAG){
@@ -91,7 +106,25 @@ class CourseCatalog : ContentProvider() {
 
     override fun query(uri: Uri, projection: Array<String>?, selection: String?,
                        selectionArgs: Array<String>?, sortOrder: String?): Cursor? {
-        TODO("Implement this to handle query requests from clients.")
+        when (uriMatcher.match(uri)) {
+            1 -> { // All Courses
+                var cursor = MatrixCursor(projection, nCourses.size)
+                var course: CourseListing
+                var list = mutableListOf<Any>()
+                for (i in 0..(nCourses.size - 1)) {
+                    course = nCourses[i]
+                    for (str in projection!!.iterator()) {
+                        list.add(course.content.get(str) ?: "")
+                    }
+                    cursor.addRow(list)
+                    list.clear()
+                }
+                return cursor
+            }
+            2 -> { // Specific course
+            }
+        }
+        return null
     }
 
     override fun update(uri: Uri, values: ContentValues?, selection: String?,
