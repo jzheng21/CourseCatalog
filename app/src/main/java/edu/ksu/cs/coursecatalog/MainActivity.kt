@@ -1,6 +1,5 @@
 package edu.ksu.cs.coursecatalog
 
-import android.net.Uri
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 
@@ -11,10 +10,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val cursor = contentResolver.query(
-                Uri.parse("content://edu.ksu.cs.coursecatalog.provider/courses"),
-                arrayOf("id", "title"),
-                "",
-                emptyArray(),
+                CourseCatalog.Course.CONTENT_URI,
+                arrayOf(CourseCatalog.Course.NUMBER, CourseCatalog.Course.PREFIX, CourseCatalog.Course.TITLE),
+                CourseCatalog.Course.PREFIX + " = ?",
+                arrayOf("CIS"),
                 "",
                 null
         )

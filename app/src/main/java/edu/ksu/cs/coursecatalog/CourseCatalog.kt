@@ -6,6 +6,7 @@ import android.content.UriMatcher
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
+import android.provider.BaseColumns
 import android.util.Log
 import org.xmlpull.v1.XmlPullParser
 
@@ -13,9 +14,21 @@ class CourseCatalog : ContentProvider() {
 
     lateinit var nCourses: Array<CourseListing>
 
+    // CourseCatalog Constants
     companion object {
         val AUTHORITY = "edu.ksu.cs.coursecatalog.provider"
-        val CONTENT_URI = Uri.parse("content://$AUTHORITY/courses")
+        val BASE_URL = Uri.parse("content://$AUTHORITY")
+    }
+
+    object Course{
+        const val ID = BaseColumns._ID
+        const val PREFIX = "prefix"
+        const val NUMBER = "number"
+        const val TITLE = "title"
+        // TODO: Add remaining column names
+
+        const val PATH = "courses"
+        var CONTENT_URI = BASE_URL.buildUpon().appendEncodedPath(PATH).build()
     }
 
     private val uriMatcher = UriMatcher(UriMatcher.NO_MATCH)
@@ -106,18 +119,41 @@ class CourseCatalog : ContentProvider() {
 
     override fun query(uri: Uri, projection: Array<String>?, selection: String?,
                        selectionArgs: Array<String>?, sortOrder: String?): Cursor? {
+
+        fun selectionHelper(courseListing: CourseListing): Boolean{
+            // We expect our selection to come in the form:
+            if(selection is CharSequence){
+                var result = Regex("(\\w+)\\s*=\\s*([?\\w+])").matchEntire(selection)
+                if(result is MatchResult){
+                    var column = result.groups[1]!!.value.toString()
+                    var value = result.groups[2]!!.value
+                    value = if(value.equals("?")) selectionArgs?.get(0) ?: "" else value
+                    if(courseListing.content.get(column).toString().compareTo(value.toString()) == 0){
+                        return true
+                    }
+                    return false
+                }else{
+                    throw Exception("Unrecognized Selection Syntax")
+                }
+            }
+            throw Exception("Invalid selection")
+        }
+
         when (uriMatcher.match(uri)) {
             1 -> { // All Courses
-                var cursor = MatrixCursor(projection, nCourses.size)
+                var cursor = MatrixCursor(projection)
                 var course: CourseListing
                 var list = mutableListOf<Any>()
                 for (i in 0..(nCourses.size - 1)) {
                     course = nCourses[i]
-                    for (str in projection!!.iterator()) {
-                        list.add(course.content.get(str) ?: "")
+                    // Determine if course should be included in the selection
+                    if(selectionHelper(course)) {
+                        for (str in projection!!.iterator()) {
+                            list.add(course.content[str] ?: "")
+                        }
+                        cursor.addRow(list)
+                        list.clear()
                     }
-                    cursor.addRow(list)
-                    list.clear()
                 }
                 return cursor
             }
