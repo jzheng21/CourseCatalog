@@ -4,15 +4,14 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.UriMatcher
 import android.database.Cursor
-import android.database.MatrixCursor
 import android.net.Uri
 import android.provider.BaseColumns
-import android.util.Log
-import org.xmlpull.v1.XmlPullParser
 
 class CourseCatalog : ContentProvider() {
 
     lateinit var nCourses: Array<CourseListing>
+
+    private lateinit var mDbHelper: CourseCatalogDbHelper
 
     // CourseCatalog Constants
     companion object {
@@ -28,17 +27,22 @@ class CourseCatalog : ContentProvider() {
         // TODO: Add remaining column names
 
         const val PATH = "courses"
+        const val PATH_FOR_ID = "courses/#"
+
         var CONTENT_URI = BASE_URL.buildUpon().appendEncodedPath(PATH).build()
     }
 
     private val uriMatcher = UriMatcher(UriMatcher.NO_MATCH)
 
     init {
-        uriMatcher.addURI(AUTHORITY, "courses", 1)
-        uriMatcher.addURI(AUTHORITY, "courses/#", 2)
+        uriMatcher.addURI(AUTHORITY, Course.PATH, 1)
+        uriMatcher.addURI(AUTHORITY, Course.PATH_FOR_ID, 2)
     }
 
     override fun onCreate(): Boolean {
+        mDbHelper = CourseCatalogDbHelper(this.context)
+        /*  Manual implementation of reading from xml file to sql
+        var db = mDbHelper.writableDatabase
         var xml = context.resources.getXml(R.xml.courses)
 
         var courses = mutableListOf<CourseListing>()
@@ -87,7 +91,15 @@ class CourseCatalog : ContentProvider() {
                 }
                 eventType = xml.next()
             }
-            courses.add(CourseListing(id, ugrad, grad, prefix, number, title, description, minHours, maxHours, variableHours, requisites, semesters, uge, kstate8))
+
+            //var courseListing = CourseListing(id, ugrad, grad, prefix, number, title, description, minHours, maxHours, variableHours, requisites, semesters, uge, kstate8)
+            val values = ContentValues().apply {
+                put(CourseCatalogContract.CourseListing.COLUMN_NAME_TITLE, title)
+                put(CourseCatalogContract.CourseListing.COLUMN_NAME_PREFIX, prefix)
+                put(CourseCatalogContract.CourseListing.COLUMN_NAME_NUMBER, number)
+            }
+
+            db?.insert(CourseCatalogContract.CourseListing.TABLE_NAME, null, values)
         }
 
         while(eventType != XmlPullParser.END_DOCUMENT) {
@@ -97,10 +109,10 @@ class CourseCatalog : ContentProvider() {
             eventType = xml.next()
         }
 
-        nCourses = courses.toTypedArray()
+        //nCourses = courses.toTypedArray()
 
         Log.i("xmlcontent", stringBuffer.toString())
-
+        */
         return true
     }
 
@@ -119,7 +131,9 @@ class CourseCatalog : ContentProvider() {
 
     override fun query(uri: Uri, projection: Array<String>?, selection: String?,
                        selectionArgs: Array<String>?, sortOrder: String?): Cursor? {
+        val db = mDbHelper.readableDatabase
 
+        /* SelectionHelper - Manual implementation of selection
         fun selectionHelper(courseListing: CourseListing): Boolean{
             // We expect our selection to come in the form:
             if(selection is CharSequence){
@@ -137,10 +151,21 @@ class CourseCatalog : ContentProvider() {
                 }
             }
             throw Exception("Invalid selection")
-        }
+        }*/
 
         when (uriMatcher.match(uri)) {
             1 -> { // All Courses
+                return db.query(
+                        CourseCatalogContract.CourseListing.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        "prefix, number"
+                )
+
+                /* Manual implementation of generating cursor
                 var cursor = MatrixCursor(projection)
                 var course: CourseListing
                 var list = mutableListOf<Any>()
@@ -155,7 +180,7 @@ class CourseCatalog : ContentProvider() {
                         list.clear()
                     }
                 }
-                return cursor
+                return cursor*/
             }
             2 -> { // Specific course
             }

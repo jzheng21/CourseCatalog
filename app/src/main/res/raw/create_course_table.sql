@@ -1,0 +1,19 @@
+CREATE TABLE `courses` (
+  `_id` INTEGER PRIMARY KEY,
+  `ugrad` BOOLEAN NOT NULL,
+  `grad` BOOLEAN NOT NULL,
+  `prefix` TEXT NOT NULL,
+  `number` INTEGER NOT NULL,
+  `slug` TEXT NOT NULL,
+  `title` TEXT NOT NULL,
+  `description` TEXT NOT NULL,
+  `min_hours` INTEGER NOT NULL,
+  `max_hours` INTEGER NOT NULL,
+  `variable_hours` BOOLEAN NOT NULL,
+  `requisites` TEXT NOT NULL,
+  `semesters` TEXT NOT NULL,
+  `uge` BOOLEAN NOT NULL,
+  `kstate8_text` TEXT NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+);
